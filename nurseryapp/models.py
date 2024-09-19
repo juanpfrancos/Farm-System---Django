@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 
 class Producer(models.Model):
     identity_document = models.CharField(max_length=20, unique=True)
@@ -6,6 +9,19 @@ class Producer(models.Model):
     last_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+    def clean(self):
+        # Esta función se llama durante la validación del modelo
+        if not self.email or '@' not in self.email:
+            raise ValidationError({'email': 'Invalid email address'})
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # Esto llama a clean() antes de guardar
+        super().save(*args, **kwargs)
 
 class Farm(models.Model):
     producer = models.ForeignKey(Producer, on_delete=models.CASCADE, related_name='farms')
@@ -43,5 +59,7 @@ class FertilizerControl(ControlProduct):
 
 class ProductApplication(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='applications')
-    product = models.ForeignKey(ControlProduct, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    product = GenericForeignKey('content_type', 'object_id')
     application_date = models.DateField()
