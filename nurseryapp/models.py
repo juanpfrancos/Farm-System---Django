@@ -10,9 +10,16 @@ class Producer(models.Model):
     phone = models.CharField(max_length=15)
     email = models.EmailField()
 
+    """
+    Devuelve el nombre completo del productor.
+    """
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
+
+    """
+    Valida que el correo electrónico tenga un formato correcto.
+    """
     def clean(self):
         # Esta función se llama durante la validación del modelo
         if not self.email or '@' not in self.email:
